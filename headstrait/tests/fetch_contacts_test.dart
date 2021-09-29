@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+// Import your file which has the function to test //
 import 'package:contacts/main.dart';
 import 'package:contacts/models/contact.dart';
+// Make sure to import flutter test package //
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart';
 import 'package:http/testing.dart';
@@ -50,8 +52,7 @@ void main() {
       final client = MockClient((request) async {
         return Response(jsonEncode({}), 200);
       });
-      expect(
-          await fetchContacts(client), throwsA(const TypeMatcher<Exception>()));
+      await expectLater(fetchContacts(client), throwsException);
     });
   });
 }
