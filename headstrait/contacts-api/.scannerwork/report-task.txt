@@ -1,0 +1,6 @@
+projectKey=CON
+serverUrl=https://services.headstrait.com/sonarqube
+serverVersion=8.3.0.34182
+dashboardUrl=https://services.headstrait.com/sonarqube/dashboard?id=CON
+ceTaskId=AXw8ZFMOo65S9LYSJrQ8
+ceTaskUrl=https://services.headstrait.com/sonarqube/api/ce/task?id=AXw8ZFMOo65S9LYSJrQ8
