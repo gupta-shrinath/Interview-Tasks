@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:contacts/models/contact.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -56,34 +58,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
           });
           return fetchContacts(http.Client());
         },
-        child: FutureBuilder<List<Contact>>(
-          future: contacts,
-          builder: (context, snapshot) {
-            print("Future builder called");
-            if (snapshot.hasData) {
-              return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    return Card(
-                      margin: EdgeInsets.all(10.0),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          radius: 40,
-                          backgroundImage:
-                              AssetImage("assets/icons/img_avatar.png"),
-                        ),
-                        title: Text(snapshot.data![index].getName()),
-                        subtitle:
-                            Text(snapshot.data![index].getContactNumber()),
-                      ),
-                    );
-                  });
-            } else if (snapshot.hasError) {
-              return Text('${snapshot.error}');
-            }
-            return Center(child: const CircularProgressIndicator());
-          },
-        ),
+        child: buildContactList(contacts: contacts),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -202,7 +177,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
                     addContact();
                     clearTexts();
                     Navigator.pop(context);
-                    contacts = fetchContacts(http.Client());
+                    setState(() {
+                      contacts = fetchContacts(http.Client());
+                    });
                   }
                 },
               )
@@ -227,4 +204,43 @@ Future<List<Contact>> fetchContacts(http.Client client) async {
     }
   }
   throw Exception('Failed to load contacts');
+}
+
+Widget buildContactList({required contacts}) {
+  print("FutureBuilder Called");
+  return FutureBuilder<List<Contact>>(
+    future: contacts,
+    builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              return Card(
+                margin: EdgeInsets.all(10.0),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    radius: 40,
+                    backgroundImage: AssetImage("assets/icons/img_avatar.png"),
+                  ),
+                  title: Text(snapshot.data![index].getName()),
+                  subtitle: Text(snapshot.data![index].getContactNumber()),
+                ),
+              );
+            });
+      } else if (snapshot.hasError) {
+        return Center(
+          child: Text(
+            'Oops contact load failed !',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 20,
+            ),
+          ),
+        );
+      }
+      return Center(
+        child: const CircularProgressIndicator(),
+      );
+    },
+  );
 }
