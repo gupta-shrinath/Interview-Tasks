@@ -33,11 +33,10 @@ class ContactsScreen extends StatefulWidget {
 
 class _ContactsScreenState extends State<ContactsScreen> {
   final _formKey = GlobalKey<FormState>();
-  final firstNameTextController = TextEditingController();
-  final lastNameTextController = TextEditingController();
-  final contactNumberTextController = TextEditingController();
-
-  late Future<List<Contact>> contacts;
+  TextEditingController firstNameTextController = TextEditingController();
+  TextEditingController lastNameTextController = TextEditingController();
+  TextEditingController contactNumberTextController = TextEditingController();
+  late Future contacts;
 
   @override
   void initState() {
@@ -56,11 +55,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
           setState(() {
             contacts = fetchContacts(http.Client());
           });
-          return fetchContacts(http.Client());
+          return contacts;
         },
         child: buildContactList(contacts: contacts),
       ),
       floatingActionButton: FloatingActionButton(
+        tooltip: "Add",
         onPressed: () {
           showModalBottomSheet(
               context: context,
@@ -74,9 +74,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
   @override
   void dispose() {
-    firstNameTextController.dispose();
-    lastNameTextController.dispose();
-    contactNumberTextController.dispose();
+    // firstNameTextController.dispose();
+    // lastNameTextController.dispose();
+    // contactNumberTextController.dispose();
     super.dispose();
   }
 
@@ -95,6 +95,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
     if (response.statusCode != 201) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Contact add failed")));
+    } else if (response.statusCode == 201) {
+      print("Add success");
+      setState(() {
+        contacts = fetchContacts(http.Client());
+      });
     }
   }
 
@@ -105,6 +110,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget buildAddContactSheet() {
+    final firstNameKey = Key("firstName");
+    final lastNameKey = Key("lastName");
+    final contactNumberKey = Key("contactNumber");
+    final submitKey = Key("submit");
+
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
       child: Container(
@@ -115,6 +125,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
+                key: firstNameKey,
                 controller: firstNameTextController,
                 keyboardType: TextInputType.name,
                 decoration: InputDecoration(
@@ -132,6 +143,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 height: 20,
               ),
               TextFormField(
+                key: lastNameKey,
                 controller: lastNameTextController,
                 keyboardType: TextInputType.name,
                 decoration: InputDecoration(
@@ -150,6 +162,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 height: 20,
               ),
               TextFormField(
+                key: contactNumberKey,
                 controller: contactNumberTextController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -171,15 +184,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 height: 20,
               ),
               ElevatedButton(
+                key: submitKey,
                 child: Text("Submit"),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     addContact();
                     clearTexts();
                     Navigator.pop(context);
-                    setState(() {
-                      contacts = fetchContacts(http.Client());
-                    });
                   }
                 },
               )
@@ -198,6 +209,7 @@ Future<List<Contact>> fetchContacts(http.Client client) async {
   if (response.statusCode == 200) {
     if (json.decode(response.body).toString().length > 2) {
       List jsonResponse = json.decode(response.body);
+      print(jsonResponse.toString());
       return jsonResponse.map((e) => Contact.fromJson(e)).toList();
     } else {
       throw Exception('Failed to load contacts');
@@ -207,36 +219,38 @@ Future<List<Contact>> fetchContacts(http.Client client) async {
 }
 
 Widget buildContactList({required contacts}) {
-  print("FutureBuilder Called");
   return FutureBuilder<List<Contact>>(
     future: contacts,
     builder: (context, snapshot) {
-      if (snapshot.hasData) {
-        return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              return Card(
-                margin: EdgeInsets.all(10.0),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: AssetImage("assets/icons/img_avatar.png"),
+      if (snapshot.connectionState == ConnectionState.done) {
+        if (snapshot.hasData) {
+          return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: EdgeInsets.all(10.0),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      radius: 40,
+                      backgroundImage:
+                          AssetImage("assets/icons/img_avatar.png"),
+                    ),
+                    title: Text(snapshot.data![index].getName()),
+                    subtitle: Text(snapshot.data![index].getContactNumber()),
                   ),
-                  title: Text(snapshot.data![index].getName()),
-                  subtitle: Text(snapshot.data![index].getContactNumber()),
-                ),
-              );
-            });
-      } else if (snapshot.hasError) {
-        return Center(
-          child: Text(
-            'Oops contact load failed !',
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 20,
+                );
+              });
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Oops contact load failed !',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 20,
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
       return Center(
         child: const CircularProgressIndicator(),
